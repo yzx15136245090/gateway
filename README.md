@@ -1,1 +1,61 @@
-"# gateway" 
+#gateway
+
+###针对dubbo服务开发gateway
+解决问题：作为统一的服务出口，解决多应用服务出口混乱问题
+
+网关作用：一般也会把路由，安全，限流，缓存，日志，监控，重试，熔断等都放到 API 网关来做，然后服务层就完全脱离这些东西，纯粹的做业务，也能够很好的保证业务代码的干净，不用关心安全，压力等方面的问题
+
+表设计：
+CREATE TABLE `gw_api` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `api_name` varchar(45) NOT NULL COMMENT 'Api名称',
+  `method` varchar(200) NOT NULL COMMENT 'uri method',
+  `http_method` varchar(200) NOT NULL COMMENT 'http method',
+  `rpc_interface` varchar(1024) NOT NULL COMMENT 'dubbo泛化调用类型，需配置dubbo接口全路径名',
+  `rpc_param_type` varchar(1024) NOT NULL DEFAULT '' COMMENT 'dubbo泛化调用类型，需配置dubbo接口入参对象全路径名.目前只支持单个对象作为入参',
+  `rpc_method` varchar(45) NOT NULL COMMENT 'dubbo泛化调用类型,需配置dubbo服务的方法名',
+  `rpc_method_param_name` varchar(200) NOT NULL DEFAULT '' COMMENT '方法参数名称',
+  `rpc_timeout` int(13) NOT NULL DEFAULT '3000' COMMENT 'rpc超时时间(ms)',
+  `rpc_version` varchar(45) NOT NULL DEFAULT '1.0.0' COMMENT 'dubbo泛化调用类型,dubbo服务的版本号',
+  `desc` varchar(500) DEFAULT NULL COMMENT 'api描述，业务功能、注意事项等说明',
+  `client_id` bigint(20) NOT NULL  COMMENT 'client应用信息',
+  `priority` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '优先级,数字越大优先级越低，范围 0-4',
+  `is_valid` tinyint(4) NOT NULL DEFAULT '1' COMMENT '是否有效',
+  `create_time` bigint(20) NOT NULL  COMMENT '记录生成时间',
+  `op_time` bigint(20) NOT NULL DEFAULT '0' COMMENT '操作时间',
+  `last_ver` smallint(6) NOT NULL DEFAULT '0' COMMENT '版本号',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_api_name` (`api_name`),
+  UNIQUE KEY `uk_method` (`method`),
+   KEY `idx_client_id` (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Api基本信息表';
+
+CREATE TABLE `gw_client` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `client_name` varchar(45) DEFAULT '' COMMENT 'Api名称',
+  `sign_type` tinyint(4) NOT NULL DEFAULT '1' COMMENT '签名类型 1:sha1 2:md5',
+  `is_valid` tinyint(4) NOT NULL DEFAULT '1' COMMENT '是否有效',
+  `create_time` bigint(20) NOT NULL DEFAULT '0' COMMENT '记录生成时间',
+  `op_time` bigint(20) NOT NULL DEFAULT '0' COMMENT '操作时间',
+  `last_ver` smallint(6) NOT NULL DEFAULT '0' COMMENT '版本号',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='client应用基本信息表';
+
+CREATE TABLE `gw_api_config` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `api_id` bigint(20) unsigned NOT NULL COMMENT 'api关联ID',
+  `qps` int(4) NOT NULL DEFAULT '300' COMMENT 'qps',
+  `concurrency` int(4) NOT NULL DEFAULT '300' COMMENT '并发',
+  `is_valid` tinyint(4) NOT NULL DEFAULT '1' COMMENT '是否有效',
+  `create_time` bigint(20) NOT NULL DEFAULT '0' COMMENT '记录生成时间',
+  `op_time` bigint(20) NOT NULL DEFAULT '0' COMMENT '操作时间',
+  `last_ver` smallint(6) NOT NULL DEFAULT '0' COMMENT '版本号',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='api配置表'
+  
+  
+
+  
+Hytrix:首先为什么要用hytrix,在分布式系统中会出现很多的调用失败，比如会出现超时，异常错误，hytrix就是保证分布式系统中出现调用是啊比的情况下，不会导致整体的服务失败，Hystrix提供了熔断、隔离、Fallback、cache、监控等功能。 这里使用hytrix熔断器。
+    
+    
