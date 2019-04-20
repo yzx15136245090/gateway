@@ -1,0 +1,60 @@
+server:
+  port: 8090
+  servlet:
+    context-path: /gateway
+
+spring:
+  datasource:
+    driver-class-name: ${gw.jdbc.driver}
+    url: ${gw.jdbc.url}
+    username: ${gw.jdbc.username}
+    password: ${gw.jdbc.password}
+    hikari:
+      maximum-pool-size: 15  #推荐的公式：((core_count * 2) + effective_spindle_count) -->
+      max-lifetime: 1765000  #一个连接的生命时长（毫秒），超时而且没被使用则被释放（retired）
+      connection-timeout: 6000
+      idle-timeout: 600000  #一个连接idle状态的最大时长（毫秒），超时则被释放（retired）
+      read-only: false
+      connection-test-query: SELECT 1
+
+  dubbo:
+    application:
+      name: gateway
+      owner: shaopeng.liu
+    registry:
+      protocol: zookeeper
+      address: ${zookeeper.address}
+    protocol:
+      name: dubbo
+      port: -1
+      threads: 400
+    monitor:
+      protocol: registry
+    consumer:
+      retries: 0
+      timeout: 5000
+      check: false
+#    provider:
+#      retries: 0
+#      delay: -1
+#      loadbalance: leastactive
+    service:
+      shutdown:
+        wait:  30000
+  thymeleaf:
+    prefix: classpath:/static/
+    suffix: .html
+    cache: false
+    encoding: UTF-8
+#    content-type: text/html
+    check-template: true
+    mode: LEGACYHTML5
+
+
+
+#mybatis:
+#  mapper-locations: "classpath*:/mapper/*Mapper.xml"
+#  check-config-location: false
+#  typeAliasesPackage: xxx.com.shaopeng.gateway.dao.mapper
+
+
